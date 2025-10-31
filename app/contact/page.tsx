@@ -94,8 +94,8 @@ export default function Contact() {
             <div className="p-6 bg-secondary rounded-lg border border-border text-center">
               <MapPin className="text-accent mx-auto mb-4" size={32} />
               <h3 className="font-semibold text-primary mb-2">العنوان</h3>
-              <p className="text-sm text-muted-foreground">الرياض - المملكة العربية السعودية</p>
-              <p className="text-sm text-muted-foreground">حي النرجس، شارع الملك فهد</p>
+              <p className="text-sm text-muted-foreground">مراكش - المملكة  المغربية</p>
+              <p className="text-sm text-muted-foreground">حي المحاميد 5،   أمام مسجد مولاي الحسن</p>
             </div>
 
             <div className="p-6 bg-secondary rounded-lg border border-border text-center">
