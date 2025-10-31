@@ -122,59 +122,67 @@ export default function Home() {
       <Header />
       <main className="flex flex-col min-h-screen">
         {/* Hero Section with Logo */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/95 text-primary-foreground py-20 sm:py-32">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              {/* Text Content */}
-              <div className="animate-slideInLeft">
-                <div className="flex items-center gap-2 mb-6">
-                  <span className="inline-block px-4 py-2 bg-accent text-accent-foreground rounded-full text-sm font-bold tracking-wider">
-                    عروض حصرية
-                  </span>
-                </div>
-                <h1 className="text-6xl sm:text-7xl font-black mb-4 text-pretty">الشذى</h1>
-                <p className="text-2xl mb-2 font-bold text-accent">البخور والعطور الأصلية</p>
-                <p className="text-lg opacity-90 mb-8 leading-relaxed">
-                  اكتشف عالماً من العطور الفاخرة، مزيج فريد من التقاليد الشرقية والفن الحديث. كل زجاجة تحكي قصة عطر لا
-                  تُنسى
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Link
-                    href="/shop"
-                    className="inline-flex items-center justify-center px-8 py-3 bg-accent text-accent-foreground rounded-lg font-bold hover:opacity-90 transition-all duration-300 transform hover:scale-105 text-base"
-                  >
-                    تسوق الآن
-                  </Link>
-                  <Link
-                    href="/about"
-                    className="inline-flex items-center justify-center px-8 py-3 border-2 border-accent text-accent rounded-lg font-bold hover:bg-accent hover:text-accent-foreground transition-all duration-300"
-                  >
-                    عن المتجر
-                  </Link>
-                </div>
-              </div>
+        <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/95 text-primary-foreground ">
+  <div
+    className="relative max-w-full mx-auto px-4 sm:px-6 lg:px-8 bg-cover bg-center bg-no-repeat rounded-2xl h-[700px] overflow-hidden"
+    style={{
+      backgroundImage:
+        "url('/old-fashioned-table-setting-with-antique-metal-decorations-generated-by-ai.jpg')",
+    }}
+  >
+    {/* Blur overlay */}
+    <div className="absolute inset-0 bg-black/10 backdrop-blur-30"></div>
 
-              <div className="animate-float hidden md:flex justify-center items-center">
-                <div className="relative w-72 h-80">
-                  <div className="absolute inset-0 bg-accent opacity-15 rounded-full blur-3xl animate-pulse"></div>
-                  <Image
-                    src="/chada-logo.png"
-                    alt="شعار الشذى"
-                    width={288}
-                    height={288}
-                    className="relative z-10 w-full h-full object-contain"
-                    priority
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center h-full relative z-10">
+      {/* Text Content */}
+      <div className="animate-slideInLeft">
+        <div className="flex items-center gap-2 mb-6">
+          <span className="inline-block px-4 py-2 bg-accent text-accent-foreground rounded-full text-sm font-bold tracking-wider">
+            عروض حصرية
+          </span>
+        </div>
+        <h1 className="text-6xl sm:text-7xl font-black mb-4 text-pretty">الشذى</h1>
+        <p className="text-2xl mb-2 font-bold text-accent">البخور والعطور الأصلية</p>
+        <p className="text-lg opacity-90 mb-8 leading-relaxed">
+          اكتشف عالماً من العطور الفاخرة، مزيج فريد من التقاليد الشرقية والفن الحديث. كل زجاجة تحكي قصة عطر لا تُنسى
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Link
+            href="/shop"
+            className="inline-flex items-center justify-center px-8 py-3 bg-accent text-accent-foreground rounded-lg font-bold hover:opacity-90 transition-all duration-300 transform hover:scale-105 text-base"
+          >
+            تسوق الآن
+          </Link>
+          <Link
+            href="/about"
+            className="inline-flex items-center justify-center px-8 py-3 border-2 border-accent text-accent rounded-lg font-bold hover:bg-accent hover:text-accent-foreground transition-all duration-300"
+          >
+            عن المتجر
+          </Link>
+        </div>
+      </div>
 
-          {/* Decorative background elements */}
-          <div className="absolute -left-40 top-20 w-80 h-80 bg-accent opacity-5 rounded-full blur-3xl"></div>
-          <div className="absolute -right-40 bottom-0 w-80 h-80 bg-accent opacity-5 rounded-full blur-3xl"></div>
-        </section>
+      <div className="animate-float hidden md:flex justify-center items-center h-full">
+        <div className="relative w-72 h-80">
+          <div className="absolute inset-0 bg-accent opacity-15 rounded-full blur-3xl animate-pulse"></div>
+          <Image
+            src="/chada-logo.png"
+            alt="شعار الشذى"
+            width={288}
+            height={288}
+            className="relative z-10 w-full h-full object-contain"
+            priority
+          />
+        </div>
+      </div>
+    </div>
+  </div>
 
+  {/* Decorative background elements */}
+  <div className="absolute -left-40 w-100 h-100 bg-accent opacity-5 rounded-full blur-3xl"></div>
+  <div className="absolute -right-40 bottom-0 w-80 h-80 bg-accent opacity-5 rounded-full blur-3xl"></div>
+</section>
+    
         {/* Today's Deal Section */}
         <section className="py-16 px-4 sm:px-6 lg:px-8 bg-secondary">
           <div className="max-w-7xl mx-auto">
