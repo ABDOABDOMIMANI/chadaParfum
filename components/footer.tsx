@@ -31,8 +31,8 @@ export function Footer() {
           </div>
           <div>
             <h4 className="text-sm font-semibold mb-4 text-primary">التواصل</h4>
-            <p className="text-sm text-muted-foreground mb-2">البريد الإلكتروني: info@shathat.com</p>
-            <p className="text-sm text-muted-foreground">الهاتف: +966 50 123 4567</p>
+            <p className="text-sm text-muted-foreground mb-2">البريد الإلكتروني: mouadharouri@shathat.com</p>
+            <p className="text-sm text-muted-foreground">الهاتف: 0623-287221</p>
           </div>
         </div>
         <div className="border-t border-border pt-8 flex justify-center items-center text-sm text-muted-foreground">

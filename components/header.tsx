@@ -2,12 +2,16 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Menu, X } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Menu, X, ShoppingCart } from "lucide-react"
 import Image from "next/image"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
+  const pathname = usePathname()
+  const isHomePage = pathname === "/"
 
   // Detect scroll
   useEffect(() => {
@@ -22,11 +26,32 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  // Load cart count
+  useEffect(() => {
+    const loadCartCount = () => {
+      if (typeof window !== "undefined") {
+        const cart = JSON.parse(localStorage.getItem("chada_cart") || "[]")
+        const count = cart.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+        setCartCount(count)
+      }
+    }
+
+    loadCartCount()
+    window.addEventListener("storage", loadCartCount)
+    return () => window.removeEventListener("storage", loadCartCount)
+  }, [])
+
+  // Determine header background based on page and scroll
+  const getHeaderBg = () => {
+    if (isHomePage) {
+      return scrolled ? "bg-primary/95 backdrop-blur-md" : "bg-transparent"
+    }
+    return "bg-primary/95 backdrop-blur-md"
+  }
+
   return (
     <header
-      className={`fixed top-4 left-4 right-4 z-50 rounded-2xl shadow-lg transition-colors duration-500 ${
-        scrolled ? "bg-primary backdrop-blur-md" : "bg-transparent"
-      }`}
+      className={`fixed top-4 left-4 right-4 z-50 rounded-2xl shadow-lg transition-all duration-500 ${getHeaderBg()}`}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex justify-between items-center">
@@ -47,7 +72,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex   gap-8">
+          <div className="hidden md:flex items-center gap-8">
             <Link
               href="/"
               className="text-xl text-white hover:text-white/80 transition-colors font-medium font-tinta"
@@ -72,6 +97,17 @@ export function Header() {
             >
               اتصل بنا
             </Link>
+            <Link
+              href="/cart"
+              className="relative text-xl text-white hover:text-white/80 transition-colors font-medium font-tinta flex items-center gap-2"
+            >
+              <ShoppingCart size={24} />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </span>
+              )}
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -94,6 +130,18 @@ export function Header() {
             </Link>
             <Link href="/contact" className="block py-2 text-lg text-white hover:text-white/80 transition-colors font-tinta">
               اتصل بنا
+            </Link>
+            <Link
+              href="/cart"
+              className="block py-2 text-lg text-white hover:text-white/80 transition-colors font-tinta flex items-center gap-2"
+            >
+              <ShoppingCart size={20} />
+              السلة
+              {cartCount > 0 && (
+                <span className="bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-bold">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </span>
+              )}
             </Link>
           </div>
         )}
