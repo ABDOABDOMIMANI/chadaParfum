@@ -60,24 +60,31 @@ export default function CartPage() {
   })
 
   useEffect(() => {
-    loadCart()
-    fetchProducts()
-  }, [fetchProducts])
+    if (typeof window !== "undefined") {
+      loadCart()
+      fetchProducts()
+    }
+  }, []) // Remove fetchProducts from deps to avoid circular dependency
 
-  const loadCart = () => {
+  const loadCart = useCallback(() => {
     if (typeof window !== "undefined") {
       const savedCart = localStorage.getItem("chada_cart")
       if (savedCart) {
-        const cartData = JSON.parse(savedCart)
-        setCart(cartData)
-        if (cartData.length === 0) {
-          router.push("/shop")
+        try {
+          const cartData = JSON.parse(savedCart)
+          setCart(cartData)
+          if (cartData.length === 0) {
+            router.push("/shop")
+          }
+        } catch (e) {
+          console.error("Error loading cart:", e)
+          setCart([])
         }
       } else {
-        router.push("/shop")
+        setCart([])
       }
     }
-  }
+  }, [router])
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -122,7 +129,8 @@ export default function CartPage() {
     }
   }, [])
 
-  const getCartProducts = (): (Product & { quantity: number; cartPrice?: number; selectedImageIndex?: number })[] => {
+  const getCartProducts = useCallback((): (Product & { quantity: number; cartPrice?: number; selectedImageIndex?: number })[] => {
+    if (!cart || !products) return []
     return cart
       .map((item) => {
         const product = products.find((p) => p.id === item.productId)
@@ -139,7 +147,7 @@ export default function CartPage() {
         return null
       })
       .filter((item): item is Product & { quantity: number; cartPrice?: number; selectedImageIndex?: number } => item !== null)
-  }
+  }, [cart, products])
 
   const updateQuantity = (productId: number, selectedImageIndex: number | undefined, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -272,8 +280,13 @@ export default function CartPage() {
     }
   }
 
-  const cartProducts = useMemo(() => getCartProducts(), [products])
+  const cartProducts = useMemo(() => {
+    if (typeof window === "undefined") return []
+    return getCartProducts()
+  }, [products, cart])
+  
   const total = useMemo(() => {
+    if (typeof window === "undefined") return 0
     return cartProducts.reduce((total, item) => {
       const itemPrice = item.cartPrice || item.price
       return total + itemPrice * item.quantity

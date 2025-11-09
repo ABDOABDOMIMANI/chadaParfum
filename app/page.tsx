@@ -153,7 +153,7 @@ export default function Home() {
         <PromotionsSlider autoSlide={true} autoSlideInterval={5000} />
 
         {/* Products Slider Section */}
-        <ProductsSlider limit={8} autoSlide={true} autoSlideInterval={5000} />
+        <ProductsSlider limit={9} autoSlide={true} autoSlideInterval={5000} />
 
         {/* Quotes Carousel Section */}
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-secondary to-background">

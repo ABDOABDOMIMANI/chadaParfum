@@ -8,6 +8,7 @@ import { useState, useMemo, useEffect, useCallback } from "react"
 import Image from "next/image"
 
 import { API_BASE_URL, buildImageUrl } from "@/lib/api"
+import { LoadingSpinner, ProductGridSkeleton } from "@/components/loading-spinner"
 
 interface Product {
   id: number
@@ -43,14 +44,16 @@ export default function Shop() {
   const [maxPriceFilter, setMaxPriceFilter] = useState(1000)
   const [inStock, setInStock] = useState(false)
   const [onSale, setOnSale] = useState(false)
-  const [itemsPerPage, setItemsPerPage] = useState(12)
+  const [itemsPerPage, setItemsPerPage] = useState(3) // Changed to 3 items per page
   const [currentPage, setCurrentPage] = useState(1)
   const [viewLayout, setViewLayout] = useState<"grid-2" | "grid-3" | "grid-4">("grid-3")
 
   useEffect(() => {
-    fetchProducts()
-    fetchCategories()
-  }, [])
+    if (typeof window !== "undefined") {
+      fetchProducts()
+      fetchCategories()
+    }
+  }, []) // Empty deps - functions are stable
 
   useEffect(() => {
     // Calculate price range from products
@@ -245,6 +248,11 @@ export default function Shop() {
 
     return result
   }, [products, searchTerm, selectedCategory, sortBy, minPriceFilter, maxPriceFilter, inStock, onSale])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedCategory, sortBy, minPriceFilter, maxPriceFilter, inStock, onSale])
 
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedProducts.length / itemsPerPage)
@@ -476,12 +484,7 @@ export default function Shop() {
               </div>
 
               {/* Loading State */}
-              {loading && (
-                <div className="text-center py-12">
-                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                  <p className="mt-4 text-muted-foreground">جاري تحميل المنتجات...</p>
-                </div>
-              )}
+              {loading && <ProductGridSkeleton count={3} />}
 
               {/* No results message */}
               {!loading && filteredAndSortedProducts.length === 0 && (

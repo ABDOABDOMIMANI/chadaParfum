@@ -7,6 +7,7 @@ import Image from "next/image"
 import { ChevronRight, ChevronLeft, ShoppingCart, Tag, X, Info } from "lucide-react"
 
 import { API_BASE_URL, buildImageUrl } from "@/lib/api"
+import { LoadingSpinner } from "@/components/loading-spinner"
 
 interface Product {
   id: number
@@ -43,21 +44,9 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
   const popupRef = useRef<HTMLDivElement>(null)
   const productRefs = useRef<Map<number, HTMLDivElement>>(new Map())
 
-  useEffect(() => {
-    fetchPromotions()
-  }, [fetchPromotions])
-
-  useEffect(() => {
-    if (autoSlide && !isPaused && products.length > productsPerSlide) {
-      const maxIndex = Math.ceil(products.length / productsPerSlide) - 1
-      const interval = setInterval(() => {
-        setCurrentIndex((prev) => (prev + 1) % (maxIndex + 1))
-      }, autoSlideInterval)
-      return () => clearInterval(interval)
-    }
-  }, [autoSlide, autoSlideInterval, isPaused, products.length, productsPerSlide])
-
   const fetchPromotions = useCallback(async () => {
+    if (typeof window === "undefined") return
+    
     try {
       setLoading(true)
       // Check cache first (client-side caching)
@@ -67,11 +56,15 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
       const now = Date.now()
       
       if (cached) {
-        const { data, timestamp } = JSON.parse(cached)
-        if (now - timestamp < cacheTime) {
-          setProducts(data.filter((p: Product) => p.active && p.stock > 0))
-          setLoading(false)
-          return
+        try {
+          const { data, timestamp } = JSON.parse(cached)
+          if (now - timestamp < cacheTime) {
+            setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+            setLoading(false)
+            return
+          }
+        } catch (e) {
+          console.error("Error parsing cached promotions:", e)
         }
       }
       
@@ -92,13 +85,34 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
       const cacheKey = 'promotions_cache'
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
-        const { data } = JSON.parse(cached)
-        setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+        try {
+          const { data } = JSON.parse(cached)
+          setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+        } catch (e) {
+          console.error("Error parsing cached promotions on error:", e)
+        }
       }
     } finally {
       setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      fetchPromotions()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // fetchPromotions is stable (empty deps), safe to omit
+
+  useEffect(() => {
+    if (autoSlide && !isPaused && products.length > productsPerSlide) {
+      const maxIndex = Math.ceil(products.length / productsPerSlide) - 1
+      const interval = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % (maxIndex + 1))
+      }, autoSlideInterval)
+      return () => clearInterval(interval)
+    }
+  }, [autoSlide, autoSlideInterval, isPaused, products.length, productsPerSlide])
 
 
   const getProductImage = useCallback((product: Product): string => {
