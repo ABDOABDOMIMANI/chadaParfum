@@ -3,16 +3,18 @@
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Award, Users, Heart, Sparkles } from "lucide-react"
+import Image from "next/image"
+import { useMemo } from "react"
 
 export default function About() {
-  const teamMembers = [
+  const teamMembers = useMemo(() => [
     { name: "فاطمة الدعيجي", role: "المؤسسة والمديرة التنفيذية", image: "/professional-woman.png" },
     { name: "محمد السهلي", role: "مدير المنتجات", image: "/professional-man.png" },
     { name: "سارة المشاري", role: "مدير العملاء", image: "/professional-woman.png" },
     { name: "أحمد الخريجي", role: "خبير العطور", image: "/professional-man.png" },
-  ]
+  ], [])
 
-  const testimonials = [
+  const testimonials = useMemo(() => [
     {
       name: "ليلى محمود",
       role: "عميلة",
@@ -31,23 +33,23 @@ export default function About() {
       comment: "الخدمة السريعة والتغليف الفاخر يعكس اهتمام المتجر بالتفاصيل.",
       image: "/diverse-woman-portrait.png",
     },
-  ]
+  ], [])
 
-  const values = [
+  const values = useMemo(() => [
     { icon: Award, title: "الجودة", description: "نختار فقط أفضل العطور الأصلية والفاخرة" },
     { icon: Sparkles, title: "الفخامة", description: "تجربة تسوق فاخرة في كل تفاصيل" },
     { icon: Heart, title: "الاحترام", description: "نقدر ذوق وخصوصية عملائنا الكرام" },
     { icon: Users, title: "التعاون", description: "فريق محترف ملتزم بخدمة أفضل" },
-  ]
+  ], [])
 
-  const timeline = [
+  const timeline = useMemo(() => [
     { year: 2014, event: "تأسيس شذى للعطور برؤية واضحة" },
     { year: 2016, event: "افتتاح أول فرع في الرياض" },
     { year: 2018, event: "توسع إلى عدة مدن في المملكة" },
     { year: 2020, event: "انطلاق المتجر الإلكتروني" },
     { year: 2023, event: "تجاوز 10,000 عميل راضي" },
     { year: 2025, event: "أفضل متجر عطور في الشرق الأوسط" },
-  ]
+  ], [])
 
   return (
     <>
@@ -132,11 +134,16 @@ export default function About() {
                   key={member.name}
                   className="text-center p-6 bg-card rounded-lg border border-border hover:shadow-lg transition-shadow"
                 >
-                  <img
-                    src={member.image || "/placeholder.svg"}
-                    alt={member.name}
-                    className="w-24 h-24 rounded-full mx-auto mb-4 object-cover bg-muted"
-                  />
+                  <div className="relative w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden bg-muted">
+                    <Image
+                      src={member.image || "/placeholder.svg"}
+                      alt={member.name}
+                      fill
+                      className="object-cover"
+                      sizes="96px"
+                      loading="lazy"
+                    />
+                  </div>
                   <h3 className="text-lg font-bold text-primary mb-1">{member.name}</h3>
                   <p className="text-sm text-muted-foreground">{member.role}</p>
                 </div>
@@ -173,11 +180,16 @@ export default function About() {
               {testimonials.map((testimonial, index) => (
                 <div key={index} className="p-6 bg-card rounded-lg border border-border">
                   <div className="flex items-center gap-4 mb-4">
-                    <img
-                      src={testimonial.image || "/placeholder.svg"}
-                      alt={testimonial.name}
-                      className="w-12 h-12 rounded-full object-cover bg-muted"
-                    />
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden bg-muted flex-shrink-0">
+                      <Image
+                        src={testimonial.image || "/placeholder.svg"}
+                        alt={testimonial.name}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                        loading="lazy"
+                      />
+                    </div>
                     <div>
                       <h4 className="font-semibold text-primary">{testimonial.name}</h4>
                       <p className="text-sm text-muted-foreground">{testimonial.role}</p>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ChevronRight, ChevronLeft, ShoppingCart, Star } from "lucide-react"
@@ -37,7 +37,7 @@ export function ProductsSlider({ limit = 8, autoSlide = true, autoSlideInterval 
 
   useEffect(() => {
     fetchProducts()
-  }, [])
+  }, [fetchProducts])
 
   useEffect(() => {
     const updateProductsPerSlide = () => {
@@ -67,10 +67,32 @@ export function ProductsSlider({ limit = 8, autoSlide = true, autoSlideInterval 
     }
   }, [autoSlide, autoSlideInterval, isPaused, products.length, productsPerSlide])
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${API_BASE_URL}/products`)
+      // Check cache first (client-side caching)
+      const cacheKey = 'products_slider_cache'
+      const cacheTime = 60000 // 1 minute
+      const cached = localStorage.getItem(cacheKey)
+      const now = Date.now()
+      
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached)
+        if (now - timestamp < cacheTime) {
+          const filtered = data
+            .filter((p: Product) => p.active && p.stock > 0)
+            .slice(0, limit)
+          setProducts(filtered)
+          setLoading(false)
+          return
+        }
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/products`, {
+        headers: {
+          'Cache-Control': 'public, max-age=60',
+        },
+      })
       if (!res.ok) throw new Error("Failed to fetch products")
       const data = await res.json()
       // Filter only active products with stock > 0 and limit the number
@@ -78,15 +100,27 @@ export function ProductsSlider({ limit = 8, autoSlide = true, autoSlideInterval 
         .filter((p: Product) => p.active && p.stock > 0)
         .slice(0, limit)
       setProducts(filtered)
+      // Cache the results
+      localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: now }))
     } catch (error) {
       console.error("Error fetching products:", error)
+      // Try to use cached data on error
+      const cacheKey = 'products_slider_cache'
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        const { data } = JSON.parse(cached)
+        const filtered = data
+          .filter((p: Product) => p.active && p.stock > 0)
+          .slice(0, limit)
+        setProducts(filtered)
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [limit])
 
 
-  const getProductImage = (product: Product): string => {
+  const getProductImage = useCallback((product: Product): string => {
     try {
       if (product.imageUrls) {
         const imageUrls = JSON.parse(product.imageUrls)
@@ -101,7 +135,7 @@ export function ProductsSlider({ limit = 8, autoSlide = true, autoSlideInterval 
       // Ignore
     }
     return "/placeholder.svg?height=300&width=300"
-  }
+  }, [])
 
   const addToCart = (productId: number, e: React.MouseEvent) => {
     e.preventDefault()

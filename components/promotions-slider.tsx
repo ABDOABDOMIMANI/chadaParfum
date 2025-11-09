@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { ChevronRight, ChevronLeft, ShoppingCart, Tag, X, Info } from "lucide-react"
 
 import { API_BASE_URL, buildImageUrl } from "@/lib/api"
@@ -44,7 +45,7 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
 
   useEffect(() => {
     fetchPromotions()
-  }, [])
+  }, [fetchPromotions])
 
   useEffect(() => {
     if (autoSlide && !isPaused && products.length > productsPerSlide) {
@@ -56,22 +57,51 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
     }
   }, [autoSlide, autoSlideInterval, isPaused, products.length, productsPerSlide])
 
-  const fetchPromotions = async () => {
+  const fetchPromotions = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${API_BASE_URL}/products/promotions`)
+      // Check cache first (client-side caching)
+      const cacheKey = 'promotions_cache'
+      const cacheTime = 60000 // 1 minute
+      const cached = localStorage.getItem(cacheKey)
+      const now = Date.now()
+      
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached)
+        if (now - timestamp < cacheTime) {
+          setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+          setLoading(false)
+          return
+        }
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/products/promotions`, {
+        headers: {
+          'Cache-Control': 'public, max-age=60',
+        },
+      })
       if (!res.ok) throw new Error("Failed to fetch promotions")
       const data = await res.json()
-      setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+      const filtered = data.filter((p: Product) => p.active && p.stock > 0)
+      setProducts(filtered)
+      // Cache the results
+      localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: now }))
     } catch (error) {
       console.error("Error fetching promotions:", error)
+      // Try to use cached data on error
+      const cacheKey = 'promotions_cache'
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        const { data } = JSON.parse(cached)
+        setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
 
-  const getProductImage = (product: Product): string => {
+  const getProductImage = useCallback((product: Product): string => {
     try {
       if (product.imageUrls) {
         const imageUrls = JSON.parse(product.imageUrls)
@@ -86,7 +116,7 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
       // Ignore
     }
     return "/placeholder.svg?height=192&width=192"
-  }
+  }, [])
 
   const addToCart = (productId: number, e?: React.MouseEvent) => {
     if (e) {
@@ -330,14 +360,17 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
                                     -{discountPercent}%
                                   </div>
                                 )}
-                                <div className="w-full h-full overflow-hidden" style={{ borderRadius: "inherit" }}>
-                                  <img
+                                <div className="w-full h-full overflow-hidden relative" style={{ borderRadius: "inherit" }}>
+                                  <Image
                                     src={getProductImage(product)}
                                     alt={product.name}
-                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    fill
+                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
                                     style={{
                                       objectPosition: "center",
                                     }}
+                                    sizes="(max-width: 768px) 192px, (max-width: 1024px) 224px, 256px"
+                                    loading="lazy"
                                   />
                                 </div>
                                 {/* Hover Overlay */}
@@ -439,11 +472,14 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
             </button>
 
             {/* Product Image */}
-            <div className="mb-4 -mt-2">
-              <img
+            <div className="mb-4 -mt-2 relative w-full h-56">
+              <Image
                 src={getProductImage(hoveredProduct)}
                 alt={hoveredProduct.name}
-                className="w-full h-56 object-cover rounded-xl shadow-lg"
+                fill
+                className="object-cover rounded-xl shadow-lg"
+                sizes="400px"
+                loading="lazy"
               />
             </div>
 

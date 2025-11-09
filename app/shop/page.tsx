@@ -4,7 +4,8 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import Link from "next/link"
 import { Star, Search, ShoppingCart, Grid, LayoutGrid, Square } from "lucide-react"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
+import Image from "next/image"
 
 import { API_BASE_URL, buildImageUrl } from "@/lib/api"
 
@@ -75,33 +76,89 @@ export default function Shop() {
     window.dispatchEvent(new Event("storage"))
   }
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${API_BASE_URL}/products`)
+      // Check cache first (client-side caching)
+      const cacheKey = 'products_cache'
+      const cacheTime = 60000 // 1 minute
+      const cached = localStorage.getItem(cacheKey)
+      const now = Date.now()
+      
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached)
+        if (now - timestamp < cacheTime) {
+          setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+          setLoading(false)
+          return
+        }
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/products`, {
+        headers: {
+          'Cache-Control': 'public, max-age=60',
+        },
+      })
       if (!res.ok) throw new Error("Failed to fetch products")
       const data = await res.json()
-      setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+      const filtered = data.filter((p: Product) => p.active && p.stock > 0)
+      setProducts(filtered)
+      // Cache the results
+      localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: now }))
     } catch (error) {
       console.error("Error fetching products:", error)
+      // Try to use cached data on error
+      const cacheKey = 'products_cache'
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        const { data } = JSON.parse(cached)
+        setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/categories`)
+      // Check cache first (client-side caching)
+      const cacheKey = 'categories_cache'
+      const cacheTime = 300000 // 5 minutes
+      const cached = localStorage.getItem(cacheKey)
+      const now = Date.now()
+      
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached)
+        if (now - timestamp < cacheTime) {
+          setCategories(data)
+          return
+        }
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/categories`, {
+        headers: {
+          'Cache-Control': 'public, max-age=300',
+        },
+      })
       if (!res.ok) throw new Error("Failed to fetch categories")
       const data = await res.json()
       setCategories(data)
+      // Cache the results
+      localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: now }))
     } catch (error) {
       console.error("Error fetching categories:", error)
+      // Try to use cached data on error
+      const cacheKey = 'categories_cache'
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        const { data } = JSON.parse(cached)
+        setCategories(data)
+      }
     }
-  }
+  }, [])
 
 
-  const getProductImage = (product: Product): string => {
+  const getProductImage = useCallback((product: Product): string => {
     try {
       if (product.imageUrls) {
         const imageUrls = JSON.parse(product.imageUrls)
@@ -116,7 +173,7 @@ export default function Shop() {
       // Ignore
     }
     return "/placeholder.svg?height=192&width=192"
-  }
+  }, [])
 
   const isProductOnPromotion = (product: Product): boolean => {
     if (!product.discountPercentage || product.discountPercentage <= 0) return false
@@ -438,18 +495,21 @@ export default function Shop() {
                           key={product.id}
                           className="group rounded-lg border border-border bg-card overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                         >
-                          <div className="relative overflow-hidden h-48 bg-secondary">
-                            <img
+                          <Link href={`/product/${product.id}`} className="relative block overflow-hidden h-48 bg-secondary">
+                            <Image
                               src={getProductImage(product)}
                               alt={product.name}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              fill
+                              className="object-cover group-hover:scale-110 transition-transform duration-300"
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                              loading="lazy"
                             />
                             {priceInfo.onSale && product.discountPercentage && (
-                              <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                              <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold z-10">
                                 -{product.discountPercentage}%
                               </div>
                             )}
-                          </div>
+                          </Link>
                           <div className="p-4">
                             <h3 className="text-lg font-semibold text-primary mb-2 line-clamp-2">{product.name}</h3>
                             <p className="text-xs text-muted-foreground mb-3">{product.category.name}</p>

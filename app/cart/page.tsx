@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ShoppingCart, Plus, Minus, Trash2, ArrowRight } from "lucide-react"
@@ -61,7 +62,7 @@ export default function CartPage() {
   useEffect(() => {
     loadCart()
     fetchProducts()
-  }, [])
+  }, [fetchProducts])
 
   const loadCart = () => {
     if (typeof window !== "undefined") {
@@ -78,20 +79,48 @@ export default function CartPage() {
     }
   }
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${API_BASE_URL}/products`)
+      // Check cache first (client-side caching)
+      const cacheKey = 'cart_products_cache'
+      const cacheTime = 60000 // 1 minute
+      const cached = localStorage.getItem(cacheKey)
+      const now = Date.now()
+      
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached)
+        if (now - timestamp < cacheTime) {
+          setProducts(data)
+          setLoading(false)
+          return
+        }
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/products`, {
+        headers: {
+          'Cache-Control': 'public, max-age=60',
+        },
+      })
       if (!res.ok) throw new Error("Failed to fetch products")
       const data = await res.json()
       setProducts(data)
+      // Cache the results
+      localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: now }))
     } catch (error) {
       console.error("Error fetching products:", error)
       setError("فشل تحميل المنتجات")
+      // Try to use cached data on error
+      const cacheKey = 'cart_products_cache'
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        const { data } = JSON.parse(cached)
+        setProducts(data)
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const getCartProducts = (): (Product & { quantity: number; cartPrice?: number; selectedImageIndex?: number })[] => {
     return cart
@@ -147,7 +176,7 @@ export default function CartPage() {
   }
 
 
-  const getProductImage = (product: Product, selectedImageIndex?: number): string => {
+  const getProductImage = useCallback((product: Product, selectedImageIndex?: number): string => {
     try {
       // Try imageDetails first (new format)
       if (product.imageDetails) {
@@ -177,14 +206,8 @@ export default function CartPage() {
       // Ignore
     }
     return "/placeholder.svg?height=150&width=150"
-  }
+  }, [])
 
-  const calculateTotal = (): number => {
-    return getCartProducts().reduce((total, item) => {
-      const itemPrice = item.cartPrice || item.price
-      return total + itemPrice * item.quantity
-    }, 0)
-  }
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -249,8 +272,13 @@ export default function CartPage() {
     }
   }
 
-  const cartProducts = getCartProducts()
-  const total = calculateTotal()
+  const cartProducts = useMemo(() => getCartProducts(), [products])
+  const total = useMemo(() => {
+    return cartProducts.reduce((total, item) => {
+      const itemPrice = item.cartPrice || item.price
+      return total + itemPrice * item.quantity
+    }, 0)
+  }, [cartProducts])
 
   if (loading) {
     return (
@@ -323,11 +351,16 @@ export default function CartPage() {
                       key={itemKey}
                       className="flex gap-4 p-4 bg-card rounded-lg border border-border"
                     >
-                      <img
-                        src={getProductImage(item, item.selectedImageIndex)}
-                        alt={item.name}
-                        className="w-24 h-24 object-cover rounded-lg"
-                      />
+                      <div className="relative w-24 h-24 flex-shrink-0">
+                        <Image
+                          src={getProductImage(item, item.selectedImageIndex)}
+                          alt={item.name}
+                          fill
+                          className="object-cover rounded-lg"
+                          sizes="96px"
+                          loading="lazy"
+                        />
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-primary mb-2">{item.name}</h3>
                         <p className="text-sm text-muted-foreground mb-2">{item.category.name}</p>
