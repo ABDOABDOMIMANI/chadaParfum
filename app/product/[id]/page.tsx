@@ -437,14 +437,20 @@ export default function ProductPage() {
                 onMouseMove={handleImageMouseMove}
                 onMouseLeave={handleImageMouseLeave}
               >
-                <img
+                <Image
                   src={displayImages[selectedImage]?.url || displayImages[0]?.url}
                   alt={product.name}
-                  className="w-full h-full object-contain transition-transform duration-200"
+                  fill
+                  className="object-contain transition-transform duration-200"
                   style={{
                     transform: imageZoom.visible ? `scale(2)` : "scale(1)",
                     transformOrigin: `${imageZoom.x}% ${imageZoom.y}%`,
                   }}
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  quality={90}
+                  priority={selectedImage === 0}
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                 />
               </div>
               {displayImages.length > 1 && (
@@ -453,11 +459,19 @@ export default function ProductPage() {
                     <button
                       key={idx}
                       onClick={() => setSelectedImage(idx)}
-                      className={`rounded-lg overflow-hidden border-2 h-24 transition-all ${
+                      className={`rounded-lg overflow-hidden border-2 h-24 transition-all relative ${
                         selectedImage === idx ? "border-primary ring-2 ring-primary" : "border-border hover:border-primary/50"
                       }`}
                     >
-                      <img src={img.url} alt={`صورة ${idx + 1}`} className="w-full h-full object-cover" />
+                      <Image
+                        src={img.url}
+                        alt={`صورة ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="96px"
+                        quality={75}
+                        loading="lazy"
+                      />
                     </button>
                   ))}
                 </div>

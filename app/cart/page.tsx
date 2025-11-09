@@ -359,6 +359,7 @@ export default function CartPage() {
                           className="object-cover rounded-lg"
                           sizes="96px"
                           loading="lazy"
+                          quality={75}
                         />
                       </div>
                       <div className="flex-1">
