@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Star, Search, ShoppingCart, Grid, LayoutGrid, Square } from "lucide-react"
 import { useState, useMemo, useEffect } from "react"
 
-const API_BASE_URL = "http://localhost:8080"
+import { API_BASE_URL, buildImageUrl } from "@/lib/api"
 
 interface Product {
   id: number
@@ -100,21 +100,17 @@ export default function Shop() {
     }
   }
 
+
   const getProductImage = (product: Product): string => {
     try {
       if (product.imageUrls) {
         const imageUrls = JSON.parse(product.imageUrls)
         if (Array.isArray(imageUrls) && imageUrls.length > 0) {
-          const imagePath = imageUrls[0]
-          return imagePath.startsWith("http")
-            ? imagePath
-            : `${API_BASE_URL}${imagePath.startsWith("/") ? imagePath : "/api/images/" + imagePath}`
+          return buildImageUrl(imageUrls[0])
         }
       }
       if (product.imageUrl) {
-        return product.imageUrl.startsWith("http")
-          ? product.imageUrl
-          : `${API_BASE_URL}${product.imageUrl.startsWith("/") ? product.imageUrl : "/api/images/" + product.imageUrl}`
+        return buildImageUrl(product.imageUrl)
       }
     } catch (e) {
       // Ignore

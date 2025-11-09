@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from "next/image"
 
-const API_BASE_URL = "http://localhost:8080"
+import { API_BASE_URL, buildImageUrl } from "@/lib/api"
 
 interface ProductImage {
   url: string
@@ -89,6 +89,7 @@ export default function ProductPage() {
     try {
       setLoading(true)
       const res = await fetch(`${API_BASE_URL}/products/${productId}`)
+      console.log("res", res)
       if (!res.ok) throw new Error("Failed to fetch product")
       const data = await res.json()
       setProduct(data)
@@ -121,6 +122,7 @@ export default function ProductPage() {
     }
   }
 
+
   // Memoize product images to prevent unnecessary recalculations
   const images = useMemo((): { url: string; detail?: ProductImage }[] => {
     if (!product) return []
@@ -131,9 +133,7 @@ export default function ProductPage() {
         if (Array.isArray(imageDetails) && imageDetails.length > 0) {
           return imageDetails.map((img: any) => {
             const url = img.url || img
-            const fullUrl = url.startsWith("http") 
-              ? url 
-              : `${API_BASE_URL}${url.startsWith("/") ? url : "/api/images/" + url}`
+            const fullUrl = buildImageUrl(url)
             return {
               url: fullUrl,
               detail: {
@@ -151,15 +151,12 @@ export default function ProductPage() {
         const imageUrls = JSON.parse(product.imageUrls)
         if (Array.isArray(imageUrls) && imageUrls.length > 0) {
           return imageUrls.map((url: string) => ({
-            url: url.startsWith("http") ? url : `${API_BASE_URL}${url.startsWith("/") ? url : "/api/images/" + url}`
+            url: buildImageUrl(url)
           }))
         }
       }
       if (product.imageUrl) {
-        const url = product.imageUrl.startsWith("http")
-          ? product.imageUrl
-          : `${API_BASE_URL}${product.imageUrl.startsWith("/") ? product.imageUrl : "/api/images/" + product.imageUrl}`
-        return [{ url }]
+        return [{ url: buildImageUrl(product.imageUrl) }]
       }
     } catch (e) {
       console.error("Error parsing image URLs:", e)

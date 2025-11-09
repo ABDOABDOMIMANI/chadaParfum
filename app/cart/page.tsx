@@ -8,7 +8,7 @@ import { Footer } from "@/components/footer"
 import { ShoppingCart, Plus, Minus, Trash2, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-const API_BASE_URL = "http://localhost:8080"
+import { API_BASE_URL, buildImageUrl } from "@/lib/api"
 
 interface Product {
   id: number
@@ -146,6 +146,7 @@ export default function CartPage() {
     }
   }
 
+
   const getProductImage = (product: Product, selectedImageIndex?: number): string => {
     try {
       // Try imageDetails first (new format)
@@ -156,9 +157,7 @@ export default function CartPage() {
           const imageDetail = imageDetails[imageIndex]
           if (imageDetail) {
             const url = imageDetail.url || imageDetail
-            return url.startsWith("http")
-              ? url
-              : `${API_BASE_URL}${url.startsWith("/") ? url : "/api/images/" + url}`
+            return buildImageUrl(url)
           }
         }
       }
@@ -168,15 +167,11 @@ export default function CartPage() {
         if (Array.isArray(imageUrls) && imageUrls.length > 0) {
           const imageIndex = selectedImageIndex !== undefined ? selectedImageIndex : 0
           const imagePath = imageUrls[imageIndex] || imageUrls[0]
-          return imagePath.startsWith("http")
-            ? imagePath
-            : `${API_BASE_URL}${imagePath.startsWith("/") ? imagePath : "/api/images/" + imagePath}`
+          return buildImageUrl(imagePath)
         }
       }
       if (product.imageUrl) {
-        return product.imageUrl.startsWith("http")
-          ? product.imageUrl
-          : `${API_BASE_URL}${product.imageUrl.startsWith("/") ? product.imageUrl : "/api/images/" + product.imageUrl}`
+        return buildImageUrl(product.imageUrl)
       }
     } catch (e) {
       // Ignore
