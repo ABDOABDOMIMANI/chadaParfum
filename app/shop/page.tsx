@@ -162,15 +162,21 @@ export default function Shop() {
     try {
       if (product.imageUrls) {
         const imageUrls = JSON.parse(product.imageUrls)
-        if (Array.isArray(imageUrls) && imageUrls.length > 0) {
-          return buildImageUrl(imageUrls[0])
+        if (Array.isArray(imageUrls) && imageUrls.length > 0 && imageUrls[0]) {
+          const url = buildImageUrl(imageUrls[0])
+          if (url && url !== "/placeholder.svg?height=192&width=192") {
+            return url
+          }
         }
       }
       if (product.imageUrl) {
-        return buildImageUrl(product.imageUrl)
+        const url = buildImageUrl(product.imageUrl)
+        if (url && url !== "/placeholder.svg?height=192&width=192") {
+          return url
+        }
       }
     } catch (e) {
-      // Ignore
+      console.error("Error getting product image:", e, product)
     }
     return "/placeholder.svg?height=192&width=192"
   }, [])

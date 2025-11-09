@@ -131,9 +131,11 @@ export default function ProductPage() {
       if (product.imageDetails) {
         const imageDetails = JSON.parse(product.imageDetails)
         if (Array.isArray(imageDetails) && imageDetails.length > 0) {
-          return imageDetails.map((img: any) => {
+          const builtImages = imageDetails.map((img: any) => {
             const url = img.url || img
+            if (!url || url.trim() === "") return null
             const fullUrl = buildImageUrl(url)
+            console.log("Built image URL from imageDetails:", fullUrl, "from:", url)
             return {
               url: fullUrl,
               detail: {
@@ -143,25 +145,37 @@ export default function ProductPage() {
                 quantity: img.quantity,
               }
             }
-          })
+          }).filter((img): img is { url: string; detail?: ProductImage } => img !== null)
+          if (builtImages.length > 0) return builtImages
         }
       }
       // Fallback to imageUrls (legacy format)
       if (product.imageUrls) {
         const imageUrls = JSON.parse(product.imageUrls)
         if (Array.isArray(imageUrls) && imageUrls.length > 0) {
-          return imageUrls.map((url: string) => ({
-            url: buildImageUrl(url)
-          }))
+          const builtUrls = imageUrls.map((url: string) => {
+            if (!url || url.trim() === "") return null
+            const fullUrl = buildImageUrl(url)
+            console.log("Built image URL from imageUrls:", fullUrl, "from:", url)
+            return { url: fullUrl }
+          }).filter((img): img is { url: string } => img !== null)
+          if (builtUrls.length > 0) return builtUrls
         }
       }
-      if (product.imageUrl) {
-        return [{ url: buildImageUrl(product.imageUrl) }]
+      if (product.imageUrl && product.imageUrl.trim() !== "") {
+        const fullUrl = buildImageUrl(product.imageUrl)
+        console.log("Built image URL from imageUrl:", fullUrl, "from:", product.imageUrl)
+        return [{ url: fullUrl }]
       }
     } catch (e) {
-      console.error("Error parsing image URLs:", e)
+      console.error("Error parsing product images:", e, product)
     }
-    return [{ url: "/placeholder.svg?height=600&width=600" }]
+    console.warn("No images found for product:", product?.id, product?.name, {
+      imageUrl: product?.imageUrl,
+      imageUrls: product?.imageUrls,
+      imageDetails: product?.imageDetails
+    })
+    return []
   }, [product])
 
   // Update selected image detail when selectedImage or images change
@@ -344,6 +358,21 @@ export default function ProductPage() {
 
   // Calculate display images (fallback to placeholder if empty)
   const displayImages = images.length > 0 ? images : [{ url: "/placeholder.svg?height=600&width=600" }]
+  
+  // Debug: Log images for troubleshooting
+  useEffect(() => {
+    if (product) {
+      console.log("Product images debug:", {
+        productId: product.id,
+        productName: product.name,
+        imageUrl: product.imageUrl,
+        imageUrls: product.imageUrls,
+        imageDetails: product.imageDetails,
+        builtImages: images,
+        displayImages: displayImages
+      })
+    }
+  }, [product, images, displayImages])
 
   if (loading) {
     return (
@@ -437,21 +466,41 @@ export default function ProductPage() {
                 onMouseMove={handleImageMouseMove}
                 onMouseLeave={handleImageMouseLeave}
               >
-                <Image
-                  src={displayImages[selectedImage]?.url || displayImages[0]?.url}
-                  alt={product.name}
-                  fill
-                  className="object-contain transition-transform duration-200"
-                  style={{
-                    transform: imageZoom.visible ? `scale(2)` : "scale(1)",
-                    transformOrigin: `${imageZoom.x}% ${imageZoom.y}%`,
-                  }}
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  quality={90}
-                  priority={selectedImage === 0}
-                  placeholder="blur"
-                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                />
+                {(() => {
+                  const imageUrl = displayImages[selectedImage]?.url || displayImages[0]?.url
+                  if (!imageUrl || imageUrl.includes("placeholder")) {
+                    return (
+                      <div className="text-center text-muted-foreground">
+                        <p>لا توجد صورة</p>
+                      </div>
+                    )
+                  }
+                  return (
+                    <Image
+                      src={imageUrl}
+                      alt={product.name}
+                      fill
+                      className="object-contain transition-transform duration-200"
+                      style={{
+                        transform: imageZoom.visible ? `scale(2)` : "scale(1)",
+                        transformOrigin: `${imageZoom.x}% ${imageZoom.y}%`,
+                      }}
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      quality={90}
+                      priority={selectedImage === 0}
+                      placeholder="blur"
+                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                      onError={(e) => {
+                        console.error("Image load error for URL:", imageUrl)
+                        console.error("Error event:", e)
+                      }}
+                      onLoad={() => {
+                        console.log("Image loaded successfully:", imageUrl)
+                      }}
+                      unoptimized={false}
+                    />
+                  )
+                })()}
               </div>
               {displayImages.length > 1 && (
                 <div className="grid grid-cols-4 gap-4">

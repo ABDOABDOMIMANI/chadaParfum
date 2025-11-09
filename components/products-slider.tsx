@@ -124,15 +124,21 @@ export function ProductsSlider({ limit = 8, autoSlide = true, autoSlideInterval 
     try {
       if (product.imageUrls) {
         const imageUrls = JSON.parse(product.imageUrls)
-        if (Array.isArray(imageUrls) && imageUrls.length > 0) {
-          return buildImageUrl(imageUrls[0])
+        if (Array.isArray(imageUrls) && imageUrls.length > 0 && imageUrls[0]) {
+          const url = buildImageUrl(imageUrls[0])
+          if (url && url !== "/placeholder.svg?height=300&width=300") {
+            return url
+          }
         }
       }
       if (product.imageUrl) {
-        return buildImageUrl(product.imageUrl)
+        const url = buildImageUrl(product.imageUrl)
+        if (url && url !== "/placeholder.svg?height=300&width=300") {
+          return url
+        }
       }
     } catch (e) {
-      // Ignore
+      console.error("Error getting product image:", e, product)
     }
     return "/placeholder.svg?height=300&width=300"
   }, [])
