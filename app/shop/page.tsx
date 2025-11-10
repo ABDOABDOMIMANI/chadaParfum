@@ -23,6 +23,7 @@ interface Product {
   category: { id: number; name: string }
   imageUrls?: string
   imageUrl?: string
+  imageDetails?: string
   fragrance?: string
   volume?: number
   active: boolean
@@ -67,12 +68,44 @@ export default function Shop() {
   }, [products])
 
   const addToCart = (productId: number) => {
+    const product = products.find((p) => p.id === productId)
+    if (!product) return
+
+    // Get first image's price and index if available
+    let imagePrice: number | undefined = undefined
+    let selectedImageIndex: number | undefined = 0
+
+    try {
+      if (product.imageDetails) {
+        const imageDetails = JSON.parse(product.imageDetails)
+        if (Array.isArray(imageDetails) && imageDetails.length > 0) {
+          const firstImage = imageDetails[0]
+          if (firstImage.price !== undefined && firstImage.price !== null) {
+            imagePrice = parseFloat(firstImage.price.toString())
+            selectedImageIndex = 0
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing imageDetails:", e)
+    }
+
     const cart = JSON.parse(localStorage.getItem("chada_cart") || "[]")
-    const existingItem = cart.find((item: any) => item.productId === productId)
+    // Match by productId and selectedImageIndex (if provided)
+    const existingItem = cart.find((item: any) => 
+      item.productId === productId && 
+      (selectedImageIndex === undefined || item.selectedImageIndex === selectedImageIndex)
+    )
+    
     if (existingItem) {
       existingItem.quantity += 1
     } else {
-      cart.push({ productId, quantity: 1 })
+      cart.push({ 
+        productId, 
+        quantity: 1,
+        selectedImageIndex: selectedImageIndex,
+        price: imagePrice, // Use image-specific price if available
+      })
     }
     localStorage.setItem("chada_cart", JSON.stringify(cart))
     alert("تمت إضافة المنتج إلى السلة!")

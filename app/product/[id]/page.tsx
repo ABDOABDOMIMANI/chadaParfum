@@ -504,25 +504,46 @@ export default function ProductPage() {
               </div>
               {displayImages.length > 1 && (
                 <div className="grid grid-cols-4 gap-4">
-                  {displayImages.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setSelectedImage(idx)}
-                      className={`rounded-lg overflow-hidden border-2 h-24 transition-all relative ${
-                        selectedImage === idx ? "border-primary ring-2 ring-primary" : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <Image
-                        src={img.url}
-                        alt={`صورة ${idx + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="96px"
-                        quality={75}
-                        loading="lazy"
-                      />
-                    </button>
-                  ))}
+                  {displayImages.map((img, idx) => {
+                    const isSelected = selectedImage === idx
+                    const imageDetail = img.detail
+                    const imagePrice = imageDetail?.price
+                    const imageQuantity = imageDetail?.quantity
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedImage(idx)}
+                        className={`rounded-lg overflow-hidden border-2 h-24 transition-all relative group ${
+                          isSelected ? "border-primary ring-2 ring-primary" : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <Image
+                          src={img.url}
+                          alt={`صورة ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          sizes="96px"
+                          quality={75}
+                          loading="lazy"
+                        />
+                        {/* Price and Quantity Badge */}
+                        {imagePrice !== undefined && imagePrice !== null && (
+                          <div className={`absolute bottom-0 left-0 right-0 p-1 text-[10px] font-bold text-white ${
+                            isSelected ? "bg-primary" : "bg-black/70 group-hover:bg-primary/80"
+                          } transition-colors`}>
+                            <div className="text-center">
+                              {imagePrice.toFixed(2)} د.م
+                              {imageQuantity !== undefined && imageQuantity !== null && (
+                                <span className="block text-[9px] opacity-90">
+                                  ({imageQuantity} قطعة)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>
