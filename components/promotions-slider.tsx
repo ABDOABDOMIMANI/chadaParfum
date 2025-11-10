@@ -88,7 +88,7 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
       if (cached) {
         try {
           const { data } = JSON.parse(cached)
-          setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+            setProducts(data.filter((p: Product) => p.active))
         } catch (e) {
           console.error("Error parsing cached promotions on error:", e)
         }
@@ -367,7 +367,24 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
                       }}
                     >
                       {slideProducts.map((product, productIdx) => {
-                        const originalPrice = product.originalPrice || product.price
+                        // Get price from imageDetails
+                        let productPrice = 0
+                        try {
+                          if (product.imageDetails) {
+                            const imageDetails = JSON.parse(product.imageDetails)
+                            if (Array.isArray(imageDetails) && imageDetails.length > 0) {
+                              const prices = imageDetails
+                                .map((img: any) => img.price)
+                                .filter((price: any) => price != null && price > 0)
+                              if (prices.length > 0) {
+                                productPrice = Math.min(...prices.map((p: any) => parseFloat(p)))
+                              }
+                            }
+                          }
+                        } catch (e) {
+                          console.error("Error parsing imageDetails:", e)
+                        }
+                        const originalPrice = product.originalPrice || productPrice
                         const discountPercent = product.discountPercentage || 0
                         const isHovered = hoveredProduct?.id === product.id
 
@@ -454,7 +471,7 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
                                     {originalPrice.toFixed(2)} د.م
                                   </span>
                                   <span className="text-xl md:text-2xl font-bold text-red-500">
-                                    {product.price.toFixed(2)} د.م
+                                    {productPrice > 0 ? `${productPrice.toFixed(2)} د.م` : "متغير"}
                                   </span>
                                 </div>
                               </div>
@@ -573,7 +590,25 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
                 )}
                 <div className="flex flex-col">
                   <span className="text-gray-600 dark:text-gray-400 text-xs mb-1">المخزون</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">{hoveredProduct.stock} قطعة</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {(() => {
+                      try {
+                        if (hoveredProduct.imageDetails) {
+                          const imageDetails = JSON.parse(hoveredProduct.imageDetails)
+                          if (Array.isArray(imageDetails)) {
+                            const totalStock = imageDetails.reduce((total: number, img: any) => {
+                              const qty = img.quantity ?? 0
+                              return total + (typeof qty === 'number' ? qty : parseFloat(qty) || 0)
+                            }, 0)
+                            return `${totalStock} قطعة`
+                          }
+                        }
+                      } catch (e) {
+                        console.error("Error parsing imageDetails:", e)
+                      }
+                      return "0 قطعة"
+                    })()}
+                  </span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-gray-600 dark:text-gray-400 text-xs mb-1">الخصم</span>
@@ -587,12 +622,36 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
               <div className="pt-3 border-t-2 border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm line-through opacity-60 text-gray-500 block mb-1">
-                      {(hoveredProduct.originalPrice || hoveredProduct.price).toFixed(2)} د.م
-                    </span>
-                    <div className="text-3xl font-bold text-red-500">
-                      {hoveredProduct.price.toFixed(2)} د.م
-                    </div>
+                    {(() => {
+                      // Get price from imageDetails
+                      let hoveredPrice = 0
+                      try {
+                        if (hoveredProduct.imageDetails) {
+                          const imageDetails = JSON.parse(hoveredProduct.imageDetails)
+                          if (Array.isArray(imageDetails) && imageDetails.length > 0) {
+                            const prices = imageDetails
+                              .map((img: any) => img.price)
+                              .filter((price: any) => price != null && price > 0)
+                            if (prices.length > 0) {
+                              hoveredPrice = Math.min(...prices.map((p: any) => parseFloat(p)))
+                            }
+                          }
+                        }
+                      } catch (e) {
+                        console.error("Error parsing imageDetails:", e)
+                      }
+                      const hoveredOriginalPrice = hoveredProduct.originalPrice || hoveredPrice
+                      return (
+                        <>
+                          <span className="text-sm line-through opacity-60 text-gray-500 block mb-1">
+                            {hoveredOriginalPrice > 0 ? `${hoveredOriginalPrice.toFixed(2)} د.م` : "متغير"}
+                          </span>
+                          <div className="text-3xl font-bold text-red-500">
+                            {hoveredPrice > 0 ? `${hoveredPrice.toFixed(2)} د.م` : "متغير"}
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                   {hoveredProduct.discountPercentage && (
                     <div className="px-4 py-2 bg-red-500 text-white rounded-full text-lg font-bold shadow-lg">

@@ -411,7 +411,22 @@ export default function CartPage() {
                             </span>
                             <button
                               onClick={() => updateQuantity(item.id, item.selectedImageIndex, item.quantity + 1)}
-                              disabled={item.quantity >= item.stock}
+                              disabled={(() => {
+                                // Get stock from product imageDetails
+                                const product = products.find((p) => p.id === item.productId)
+                                if (product && item.selectedImageIndex !== undefined && product.imageDetails) {
+                                  try {
+                                    const imageDetails = JSON.parse(product.imageDetails)
+                                    if (Array.isArray(imageDetails) && imageDetails[item.selectedImageIndex]) {
+                                      const imageStock = imageDetails[item.selectedImageIndex].quantity ?? 0
+                                      return item.quantity >= imageStock
+                                    }
+                                  } catch (e) {
+                                    console.error("Error parsing imageDetails:", e)
+                                  }
+                                }
+                                return false
+                              })()}
                               className="px-3 py-2 hover:bg-secondary transition-colors disabled:opacity-50"
                             >
                               <Plus size={16} />

@@ -12,8 +12,6 @@ interface Product {
   id: number
   name: string
   description: string
-  price: number
-  stock: number
   category: { id: number; name: string }
   imageUrls?: string
   imageUrl?: string
@@ -70,9 +68,9 @@ export function ProductsSlider({ limit = 3, autoSlide = true, autoSlideInterval 
       })
       if (!res.ok) throw new Error("Failed to fetch products")
       const data = await res.json()
-      // Filter only active products with stock > 0 and limit the number
+      // Filter only active products (stock is checked per-image, backend filters products with at least one image with stock > 0)
       const filtered = data
-        .filter((p: Product) => p.active && p.stock > 0)
+        .filter((p: Product) => p.active)
         .slice(0, limit)
       setProducts(filtered)
       // Cache the results
@@ -86,7 +84,7 @@ export function ProductsSlider({ limit = 3, autoSlide = true, autoSlideInterval 
         try {
           const { data } = JSON.parse(cached)
           const filtered = data
-            .filter((p: Product) => p.active && p.stock > 0)
+            .filter((p: Product) => p.active)
             .slice(0, limit)
           setProducts(filtered)
         } catch (e) {
@@ -327,7 +325,25 @@ export function ProductsSlider({ limit = 3, autoSlide = true, autoSlideInterval 
 
                   <div className="flex items-center justify-between mt-4">
                     <span className="text-2xl font-bold text-accent">
-                      {product.price.toFixed(2)} د.م
+                      {(() => {
+                        // Get price from imageDetails
+                        try {
+                          if (product.imageDetails) {
+                            const imageDetails = JSON.parse(product.imageDetails)
+                            if (Array.isArray(imageDetails) && imageDetails.length > 0) {
+                              const prices = imageDetails
+                                .map((img: any) => img.price)
+                                .filter((price: any) => price != null && price > 0)
+                              if (prices.length > 0) {
+                                return `${Math.min(...prices.map((p: any) => parseFloat(p))).toFixed(2)} د.م`
+                              }
+                            }
+                          }
+                        } catch (e) {
+                          console.error("Error parsing imageDetails:", e)
+                        }
+                        return "متغير"
+                      })()}
                     </span>
                     <div className="flex gap-1">
                       {[...Array(5)].map((_, i) => (

@@ -23,7 +23,6 @@ interface Product {
   id: number
   name: string
   description: string
-  price: number
   originalPrice?: number
   discountPercentage?: number
   promotionStartDate?: string
@@ -186,12 +185,26 @@ export default function ProductPage() {
     }
   }, [selectedImage, images])
 
-  // Get current price - use image-specific price if available, otherwise use product price
+  // Get current price - use image-specific price if available
   const getCurrentPrice = (): number => {
     if (selectedImageDetail?.price) {
       return selectedImageDetail.price
     }
-    return product?.price || 0
+    // Try to get first image price from imageDetails
+    if (product?.imageDetails) {
+      try {
+        const imageDetails = JSON.parse(product.imageDetails)
+        if (Array.isArray(imageDetails) && imageDetails.length > 0) {
+          const firstImage = imageDetails[0]
+          if (firstImage.price != null) {
+            return parseFloat(firstImage.price)
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing imageDetails:", e)
+      }
+    }
+    return 0
   }
 
   // Get current description - use image-specific description if available, otherwise use product description
@@ -608,7 +621,7 @@ export default function ProductPage() {
                         <div className="space-y-2">
                           <div className="flex items-center gap-4">
                             <span className="text-4xl font-bold text-red-500">
-                              {product.price.toFixed(2)} د.م
+                              {currentPrice.toFixed(2)} د.م
                             </span>
                             <span className="px-3 py-1 bg-red-500 text-white rounded-full text-sm font-bold">
                               -{product.discountPercentage}%
@@ -865,8 +878,8 @@ export default function ProductPage() {
                   <span className="text-muted-foreground">السعر:</span>
                   <span className="font-semibold text-accent">
                     {product.discountPercentage && product.discountPercentage > 0 && product.originalPrice
-                      ? `${product.price.toFixed(2)} د.م`
-                      : `${product.price.toFixed(2)} د.م`}
+                      ? `${getCurrentPrice().toFixed(2)} د.م`
+                      : `${getCurrentPrice().toFixed(2)} د.م`}
                   </span>
                 </div>
               </div>

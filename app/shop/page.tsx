@@ -14,12 +14,10 @@ interface Product {
   id: number
   name: string
   description: string
-  price: number
   originalPrice?: number
   discountPercentage?: number
   promotionStartDate?: string
   promotionEndDate?: string
-  stock: number
   category: { id: number; name: string }
   imageUrls?: string
   imageUrl?: string
@@ -59,8 +57,26 @@ export default function Shop() {
   useEffect(() => {
     // Calculate price range from products
     if (products.length > 0) {
-      const prices = products.map((p) => p.originalPrice || p.price)
-      const maxPrice = Math.max(...prices)
+      // Calculate max price from imageDetails
+      const prices = products.map((p) => {
+        try {
+          if (p.imageDetails) {
+            const imageDetails = JSON.parse(p.imageDetails)
+            if (Array.isArray(imageDetails) && imageDetails.length > 0) {
+              const imagePrices = imageDetails
+                .map((img: any) => img.price)
+                .filter((price: any) => price != null && price > 0)
+              if (imagePrices.length > 0) {
+                return Math.max(...imagePrices.map((p: any) => parseFloat(p)))
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing imageDetails for max price:", e)
+        }
+        return p.originalPrice || 0
+      })
+      const maxPrice = prices.length > 0 ? Math.max(...prices) : 1000
       // Always start from 0
       setMinPriceFilter(0)
       setMaxPriceFilter(maxPrice)
@@ -228,18 +244,39 @@ export default function Shop() {
     return today >= startDate && today <= endDate
   }
 
+  // Get price from imageDetails
+  const getProductPrice = (product: Product): number => {
+    try {
+      if (product.imageDetails) {
+        const imageDetails = JSON.parse(product.imageDetails)
+        if (Array.isArray(imageDetails) && imageDetails.length > 0) {
+          const prices = imageDetails
+            .map((img: any) => img.price)
+            .filter((price: any) => price != null && price > 0)
+          if (prices.length > 0) {
+            return Math.min(...prices.map((p: any) => parseFloat(p)))
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing imageDetails for price:", e)
+    }
+    return product.originalPrice || 0
+  }
+
   const getDisplayPrice = (product: Product): { original: number; current: number; onSale: boolean } => {
     const onPromo = isProductOnPromotion(product)
+    const basePrice = getProductPrice(product)
     if (onPromo && product.originalPrice) {
       return {
         original: product.originalPrice,
-        current: product.price,
+        current: basePrice,
         onSale: true,
       }
     }
     return {
-      original: product.price,
-      current: product.price,
+      original: basePrice,
+      current: basePrice,
       onSale: false,
     }
   }
@@ -320,7 +357,10 @@ export default function Shop() {
 
   // Always start price filter from 0
   const minPrice = 0
-  const maxPrice = products.length > 0 ? Math.max(...products.map((p) => p.originalPrice || p.price)) : 1000
+  const maxPrice = products.length > 0 ? Math.max(...products.map((p) => {
+    const price = getProductPrice(p)
+    return p.originalPrice || price
+  })) : 1000
 
   return (
     <>
