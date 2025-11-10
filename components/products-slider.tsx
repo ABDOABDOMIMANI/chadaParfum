@@ -52,7 +52,7 @@ export function ProductsSlider({ limit = 3, autoSlide = true, autoSlideInterval 
           const { data, timestamp } = JSON.parse(cached)
           if (now - timestamp < cacheTime) {
             const filtered = data
-              .filter((p: Product) => p.active && p.stock > 0)
+              .filter((p: Product) => p.active)
               .slice(0, limit)
             setProducts(filtered)
             setLoading(false)
@@ -273,12 +273,36 @@ export function ProductsSlider({ limit = 3, autoSlide = true, autoSlideInterval 
                     أضف للسلة
                   </button>
 
-                  {/* Stock Badge */}
-                  {product.stock < 10 && (
-                    <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                      آخر {product.stock} قطع
-                    </div>
-                  )}
+                  {/* Stock Badge - Check imageDetails for low stock */}
+                  {(() => {
+                    let totalStock = 0
+                    let minStock = Infinity
+                    if (product.imageDetails) {
+                      try {
+                        const imageDetails = JSON.parse(product.imageDetails)
+                        if (Array.isArray(imageDetails)) {
+                          imageDetails.forEach((img: any) => {
+                            const qty = img.quantity ?? 0
+                            totalStock += qty
+                            if (qty > 0 && qty < minStock) {
+                              minStock = qty
+                            }
+                          })
+                        }
+                      } catch (e) {
+                        // Ignore parsing errors
+                      }
+                    }
+                    // Show badge if total stock is less than 10 or any image has less than 10
+                    if (totalStock > 0 && (totalStock < 10 || minStock < 10)) {
+                      return (
+                        <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                          آخر {minStock < Infinity ? minStock : totalStock} قطع
+                        </div>
+                      )
+                    }
+                    return null
+                  })()}
                 </div>
 
                 {/* Product Info */}

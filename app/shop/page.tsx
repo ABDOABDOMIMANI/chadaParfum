@@ -124,7 +124,7 @@ export default function Shop() {
       if (cached) {
         const { data, timestamp } = JSON.parse(cached)
         if (now - timestamp < cacheTime) {
-          setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+          setProducts(data.filter((p: Product) => p.active))
           setLoading(false)
           return
         }
@@ -254,7 +254,18 @@ export default function Shop() {
       
       const priceInfo = getDisplayPrice(product)
       const matchesPrice = priceInfo.current >= minPriceFilter && priceInfo.current <= maxPriceFilter
-      const matchesStock = !inStock || product.stock > 0
+      // Stock is now managed per-image, so we check imageDetails
+      let matchesStock = true
+      if (inStock && product.imageDetails) {
+        try {
+          const imageDetails = JSON.parse(product.imageDetails)
+          if (Array.isArray(imageDetails)) {
+            matchesStock = imageDetails.some((img: any) => (img.quantity ?? 0) > 0)
+          }
+        } catch (e) {
+          console.error("Error parsing imageDetails:", e)
+        }
+      }
       const matchesSale = !onSale || isProductOnPromotion(product)
 
       return matchesSearch && matchesCategory && matchesPrice && matchesStock && matchesSale

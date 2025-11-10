@@ -60,7 +60,7 @@ export function PromotionsSlider({ autoSlide = true, autoSlideInterval = 1000 }:
         try {
           const { data, timestamp } = JSON.parse(cached)
           if (now - timestamp < cacheTime) {
-            setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+            setProducts(data.filter((p: Product) => p.active))
             setLoading(false)
             return
           }

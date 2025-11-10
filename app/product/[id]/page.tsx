@@ -28,7 +28,6 @@ interface Product {
   discountPercentage?: number
   promotionStartDate?: string
   promotionEndDate?: string
-  stock: number
   category: { id: number; name: string }
   imageUrls?: string
   imageDetails?: string
@@ -203,12 +202,12 @@ export default function ProductPage() {
     return product?.description || ""
   }
 
-  // Get current stock - use image-specific quantity if available, otherwise use product stock
+  // Get current stock - use image-specific quantity
   const getCurrentStock = (): number => {
     if (selectedImageDetail?.quantity !== undefined && selectedImageDetail?.quantity !== null) {
       return selectedImageDetail.quantity
     }
-    return product?.stock || 0
+    return 0
   }
 
   const addToCart = (event?: React.MouseEvent) => {
@@ -508,28 +507,44 @@ export default function ProductPage() {
                     const isSelected = selectedImage === idx
                     const imageDetail = img.detail
                     const imagePrice = imageDetail?.price
-                    const imageQuantity = imageDetail?.quantity
+                    const imageQuantity = imageDetail?.quantity ?? 0
+                    const isInactive = imageQuantity === 0
                     return (
                       <button
                         key={idx}
-                        onClick={() => setSelectedImage(idx)}
+                        onClick={() => !isInactive && setSelectedImage(idx)}
+                        disabled={isInactive}
                         className={`rounded-lg overflow-hidden border-2 h-24 transition-all relative group ${
-                          isSelected ? "border-primary ring-2 ring-primary" : "border-border hover:border-primary/50"
+                          isInactive 
+                            ? "border-gray-400 opacity-50 cursor-not-allowed" 
+                            : isSelected 
+                              ? "border-primary ring-2 ring-primary" 
+                              : "border-border hover:border-primary/50"
                         }`}
                       >
                         <Image
                           src={img.url}
                           alt={`صورة ${idx + 1}`}
                           fill
-                          className="object-cover"
+                          className={`object-cover ${isInactive ? "grayscale" : ""}`}
                           sizes="96px"
                           quality={75}
                           loading="lazy"
                         />
+                        {/* Inactive Overlay */}
+                        {isInactive && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <span className="text-white text-[10px] font-bold">غير متوفر</span>
+                          </div>
+                        )}
                         {/* Price and Quantity Badge */}
                         {imagePrice !== undefined && imagePrice !== null && (
                           <div className={`absolute bottom-0 left-0 right-0 p-1 text-[10px] font-bold text-white ${
-                            isSelected ? "bg-primary" : "bg-black/70 group-hover:bg-primary/80"
+                            isInactive 
+                              ? "bg-gray-600" 
+                              : isSelected 
+                                ? "bg-primary" 
+                                : "bg-black/70 group-hover:bg-primary/80"
                           } transition-colors`}>
                             <div className="text-center">
                               {imagePrice.toFixed(2)} د.م
@@ -844,7 +859,7 @@ export default function ProductPage() {
                 )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">المخزون:</span>
-                  <span className="font-semibold text-foreground">{product.stock} قطعة</span>
+                  <span className="font-semibold text-foreground">{getCurrentStock()} قطعة</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">السعر:</span>

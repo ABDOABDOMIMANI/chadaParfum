@@ -134,12 +134,24 @@ export default function CartPage() {
     return cart
       .map((item) => {
         const product = products.find((p) => p.id === item.productId)
-        if (product && product.active && product.stock > 0) {
-          // Use cart price if available (image-specific price), otherwise use product price
-          const cartPrice = item.price || product.price
+        if (product && product.active) {
+          // Use cart price if available (image-specific price)
+          const cartPrice = item.price
+          // Get stock from imageDetails if available
+          let maxQuantity = 999 // Default high value
+          if (item.selectedImageIndex !== undefined && product.imageDetails) {
+            try {
+              const imageDetails = JSON.parse(product.imageDetails)
+              if (Array.isArray(imageDetails) && imageDetails[item.selectedImageIndex]) {
+                maxQuantity = imageDetails[item.selectedImageIndex].quantity ?? 0
+              }
+            } catch (e) {
+              console.error("Error parsing imageDetails:", e)
+            }
+          }
           return { 
             ...product, 
-            quantity: Math.min(item.quantity, product.stock),
+            quantity: Math.min(item.quantity, maxQuantity),
             cartPrice,
             selectedImageIndex: item.selectedImageIndex,
           }
