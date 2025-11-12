@@ -153,7 +153,8 @@ export default function Shop() {
       })
       if (!res.ok) throw new Error("Failed to fetch products")
       const data = await res.json()
-      const filtered = data.filter((p: Product) => p.active && p.stock > 0)
+      // Backend already filters products with at least one image having quantity > 0
+      const filtered = data.filter((p: Product) => p.active)
       setProducts(filtered)
       // Cache the results
       localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: now }))
@@ -164,7 +165,8 @@ export default function Shop() {
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
         const { data } = JSON.parse(cached)
-        setProducts(data.filter((p: Product) => p.active && p.stock > 0))
+        // Backend already filters products with at least one image having quantity > 0
+        setProducts(data.filter((p: Product) => p.active))
       }
     } finally {
       setLoading(false)
